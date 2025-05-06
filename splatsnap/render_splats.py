@@ -111,7 +111,7 @@ def setup_camera(position, look_at, up, fov, image_width, image_height):
 
     return view_matrix, projection_matrix
 
-def read_splat_file(path):
+def read_splat_file(path:str):
     data = np.fromfile(path, dtype=np.uint8)
     num_records = len(data) // 32
     data = data.reshape((num_records, 32))
@@ -175,6 +175,10 @@ def main(
             subprocess.run(["viu", output_path])
         else:
             typer.echo("No supported terminal image viewer found (e.g. 'catimg' or 'viu').")
+
+def cli():
+    app()
+
 
 if __name__ == "__main__":
     app()
