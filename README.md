@@ -91,7 +91,10 @@ render_splats.render(
 ## 📸 Example
 
 ```bash
-poetry run splatsnap     --input scenes/chair.ply     --output thumbnails/chair.png     --width 1024     --height 768
+poetry run splatsnap --input scenes/chair.ply \
+        --output thumbnails/chair.png \
+        --width 1024 \
+        --height 768
 ```
 
 ---
