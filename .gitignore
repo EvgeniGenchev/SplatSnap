@@ -2,3 +2,4 @@ env
 *.jpg
 data
 __pycache__
+.pytest_cache
