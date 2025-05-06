@@ -16,6 +16,17 @@ app = typer.Typer()
 
 @njit(fastmath=True)
 def is_in_frustum_numba(position, view_matrix, projection_matrix):
+    """
+    Determine if a 3D point is within the camera's view frustum.
+
+    Parameters:
+        position (ndarray): The 3D position vector.
+        view_matrix (ndarray): The view matrix.
+        projection_matrix (ndarray): The projection matrix.
+
+    Returns:
+        bool: True if the point is within the frustum, False otherwise.
+    """
     clip_space = projection_matrix @ view_matrix @ np.append(position, 1)
     w = clip_space[3]
     for i in range(3):
@@ -23,8 +34,22 @@ def is_in_frustum_numba(position, view_matrix, projection_matrix):
             return False
     return True
 
+
 @njit(fastmath=True)
 def project_splat(position, view_matrix, projection_matrix, image_width, image_height):
+    """
+    Project a 3D point onto 2D screen coordinates.
+
+    Parameters:
+        position (ndarray): The 3D position vector.
+        view_matrix (ndarray): The view matrix.
+        projection_matrix (ndarray): The projection matrix.
+        image_width (int): Width of the output image.
+        image_height (int): Height of the output image.
+
+    Returns:
+        tuple: (screen_x, screen_y, depth) coordinates.
+    """
     position_homogeneous = np.append(position, 1)
     camera_space = view_matrix @ position_homogeneous
     clip_space = projection_matrix @ camera_space
@@ -33,13 +58,38 @@ def project_splat(position, view_matrix, projection_matrix, image_width, image_h
     screen_y = (1 - ndc[1]) * 0.5 * image_height
     return screen_x, screen_y, clip_space[2]
 
+
 @njit(fastmath=True)
 def gaussian_weight(dx, dy, size):
+    """
+    Compute the Gaussian weight for a given offset and size.
+
+    Parameters:
+        dx (float): Offset in x-direction.
+        dy (float): Offset in y-direction.
+        size (float): Size of the splat.
+
+    Returns:
+        float: Gaussian weight.
+    """
     sigma = size / 4.0
     return np.exp(-(dx**2 + dy**2) / (2 * sigma**2)) / (2 * np.pi * sigma**2)
 
+
 @njit(fastmath=True)
 def update_color_and_depth_buffers(x, y, size, depth, splat_color, depth_buffer, color_buffer):
+    """
+    Update the color and depth buffers with the splat's contribution.
+
+    Parameters:
+        x (float): X-coordinate on the screen.
+        y (float): Y-coordinate on the screen.
+        size (float): Size of the splat.
+        depth (float): Depth value.
+        splat_color (ndarray): RGB color of the splat.
+        depth_buffer (ndarray): Depth buffer.
+        color_buffer (ndarray): Color buffer.
+    """
     x_min = max(0, int(x - size))
     x_max = min(depth_buffer.shape[1] - 1, int(x + size))
     y_min = max(0, int(y - size))
@@ -57,16 +107,61 @@ def update_color_and_depth_buffers(x, y, size, depth, splat_color, depth_buffer,
 
 @njit(fastmath=True)
 def get_size(splat_scales, image_width, depth):
+    """
+    Calculate the size of the splat based on its scale and depth.
+
+    Parameters:
+        splat_scales (ndarray): Scale factors of the splat.
+        image_width (int): Width of the output image.
+        depth (float): Depth value.
+
+    Returns:
+        int: Computed size of the splat.
+    """
     return max(1, int(max(splat_scales) * image_width / depth + 1e-6)* 0.4)
+
 
 @njit(fastmath=True)
 def render_one_splat(pos, scale, color, view_matrix, projection_matrix, image_width, image_height, depth_buffer, color_buffer):
+    """
+    Render a single splat onto the color and depth buffers.
+
+    Parameters:
+        pos (ndarray): Position of the splat.
+        scale (ndarray): Scale of the splat.
+        color (ndarray): Color of the splat.
+        view_matrix (ndarray): View matrix.
+        projection_matrix (ndarray): Projection matrix.
+        image_width (int): Width of the output image.
+        image_height (int): Height of the output image.
+        depth_buffer (ndarray): Depth buffer.
+        color_buffer (ndarray): Color buffer.
+    """
+
     x, y, depth = project_splat(pos, view_matrix, projection_matrix, image_width, image_height)
     if 0 <= x < image_width and 0 <= y < image_height:
         size = get_size(scale, image_width, depth)
         update_color_and_depth_buffers(x, y, size, depth, color, depth_buffer, color_buffer)
 
+
 def render_gaussian_splats_with_progress(positions, scales, colors, sorted_indices, view_matrix, projection_matrix, image_width, image_height, show_progress=True):
+    """
+    Render multiple Gaussian splats with an optional progress bar.
+
+    Parameters:
+        positions (ndarray): Positions of the splats.
+        scales (ndarray): Scales of the splats.
+        colors (ndarray): Colors of the splats.
+        sorted_indices (ndarray): Indices to sort the splats.
+        view_matrix (ndarray): View matrix.
+        projection_matrix (ndarray): Projection matrix.
+        image_width (int): Width of the output image.
+        image_height (int): Height of the output image.
+        show_progress (bool): Whether to display a progress bar.
+
+    Returns:
+        ndarray: Rendered color buffer.
+    """
     depth_buffer = np.full((image_height, image_width), np.inf)
     color_buffer = np.zeros((image_height, image_width, 3), dtype=np.float32)
 
@@ -87,7 +182,22 @@ def render_gaussian_splats_with_progress(positions, scales, colors, sorted_indic
 
     return color_buffer
 
+
 def setup_camera(position, look_at, up, fov, image_width, image_height):
+    """
+    Set up the camera's view and projection matrices.
+
+    Parameters:
+        position (ndarray): Camera position.
+        look_at (ndarray): Point the camera is looking at.
+        up (ndarray): Up direction vector.
+        fov (float): Field of view in radians.
+        image_width (int): Width of the output image.
+        image_height (int): Height of the output image.
+
+    Returns:
+        tuple: View and projection matrices.
+    """
     forward = look_at - position
     forward = forward / np.linalg.norm(forward)
     right = np.cross(forward, up)
@@ -111,7 +221,17 @@ def setup_camera(position, look_at, up, fov, image_width, image_height):
 
     return view_matrix, projection_matrix
 
+
 def read_splat_file(path:str):
+    """
+    Read and parse a .splat file.
+
+    Parameters:
+        path (str): Path to the .splat file.
+
+    Returns:
+        tuple: Positions, scales, colors, and rotations of the splats.
+    """
     data = np.fromfile(path, dtype=np.uint8)
     num_records = len(data) // 32
     data = data.reshape((num_records, 32))
@@ -122,6 +242,7 @@ def read_splat_file(path:str):
     rotations = data[:, 28:] / 255.0
 
     return positions, scales, colors, rotations
+
 
 @app.callback(invoke_without_command=True)
 def main(
