@@ -55,7 +55,7 @@ In summary, the purpose of SplatSnap is to fill a practical gap in the software 
 
 # Acknowledgements
 
-This project was developed as part of the research work carried out at the Technologies for Criminal Investigations group at Saxion University of Applied Sciences.
+This project was developed as part of the research work carried out at research group Technologies for Criminal Investigations, a joint initiative of Saxion University of Applied Sciences and the Police Academy of the Netherlands, with support from the Dutch National Government: Regiodeal Stedendriehoek.
 
 # References
 
