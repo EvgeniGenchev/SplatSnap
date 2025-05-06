@@ -2,7 +2,7 @@ import os
 from splatsnap import render_splats
 
 def test_render_output():
-    input_path = "tests/garden.splat"
+    input_path = "tests/plush.splat"
     output_path = "tests/output.png"
 
     render_splats.main(
