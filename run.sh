@@ -1,4 +1,4 @@
-python render_splats.py \
+poetry run splatsnap \
   --input-path ./data/crime.splat \
   --output-path output_image.jpg \
   --camera-position 0 0 5 \

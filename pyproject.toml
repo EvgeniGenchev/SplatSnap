@@ -1,0 +1,30 @@
+[project]
+name = "splatsnap"
+version = "0.1.0"
+description = "A tool to render thumbnails from 3D Gaussian splats."
+readme = "README.md"
+license = { text = "GPL-3.0" }
+authors = [
+    { name = "Evgeni Genchev", email = "info@evgeni-genchev.com" }
+]
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy >=2.1.1",
+    "pillow >=8.0",
+    "tqdm >=4.67.1",
+    "numba >=0.61.2",
+    "typer >=0.15.3",
+    "pyfiglet >=1.0.2",
+    "scipy (>=1.15.2,<2.0.0)"
+]
+
+[project.scripts]
+splatsnap = "splatsnap.render_splats:cli"
+
+[tool.poetry]
+# Keep this section empty or remove it entirely unless using plugins
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
