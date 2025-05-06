@@ -1,4 +1,4 @@
 env
 *.jpg
-*.splat
+data
 __pycache__
